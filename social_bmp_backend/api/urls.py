@@ -6,6 +6,8 @@ from social_bmp_backend.api import views
 
 urlpatterns = [
     path('posts/', views.PostsViewSet.as_view(),name='posts-api'),
+    url(r'^add/', views.PostsCreateSet.as_view(), name='post-list')
+
     #path('snippets/<int:pk>/', views.snippet_detail),
 ]
 

@@ -28,10 +28,10 @@ from social_bmp_backend.api import views
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
-    # path('', include(router.urls)),
+  #  path('', ),
     # path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('admin/', admin.site.urls),
-    url(r'^',include(('social_bmp_backend.api.urls','api'),namespace='posts-api')),
+    path('api/',include('social_bmp_backend.api.urls')),
 
 
 ]
