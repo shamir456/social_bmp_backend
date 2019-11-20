@@ -82,7 +82,7 @@ WSGI_APPLICATION = 'social_bmp_backend.wsgi.application'
 DATABASES = {
      'default': {
          'ENGINE': 'djongo',
-         'NAME': 'testing',
+         'NAME': 'social',
      }
  }
 

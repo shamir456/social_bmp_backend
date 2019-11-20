@@ -11,6 +11,6 @@ class PostsSerializer(serializers.DjongoModelSerializer):
 
     class Meta:
         model = Posts
-        fields = ['post_id','page_id','post_type','comments','post_published']
+        fields = ['post_id','page_id','post_message','sentiment','post_type','post_published','All','num_shares','num_comments','Like','Wow','Love','Haha','Sad','Angry','comments']
 
 
