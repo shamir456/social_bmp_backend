@@ -4,11 +4,12 @@ from django.conf.urls import url
 
 from social_bmp_backend.api import views
 
+
+
 urlpatterns = [
     path('posts/', views.PostsViewSet.as_view(),name='posts-api'),
-    url(r'^add/', views.PostsCreateSet.as_view(), name='post-list')
-
-    #path('snippets/<int:pk>/', views.snippet_detail),
+    url(r'^add/', views.PostsCreateSet.as_view(), name='post-list'),
+    path('generics/post/<int:id>/', views.PostListView.as_view()),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)
