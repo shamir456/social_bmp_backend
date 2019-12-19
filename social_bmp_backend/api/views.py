@@ -68,6 +68,8 @@ class PostsCreateSet(generics.CreateAPIView):
     queryset = Posts.objects.all()
     serializer_class = PostsSerializer
     lookup_field = 'id'
+    authentication_classes = [TokenAuthentication, SessionAuthentication, BasicAuthentication]
+
 
     def list(self, request):
         queryset = self.get_queryset()
@@ -102,38 +104,45 @@ class PostsCreateSet(generics.CreateAPIView):
 
 class PostsViewSet(generics.ListAPIView):
         serializer_class= PostSerializer
-        queryset = Posts.objects.all().order_by('id')
-        pagination_class=StandardResultsPagination
+        queryset = Posts.objects.all()
+        authentication_classes = [TokenAuthentication, SessionAuthentication, BasicAuthentication]
+        print(queryset)
+        # pagination_class=StandardResultsPagination
         
 
-        # def get(self, request, format=None):
-        # 	posts = Posts.objects.all()
-        # 	serializer = PostsSerializer(posts, many=True)
-        # 	 # if serializer.is_valid():
-        # 	# 	print(serializer.data)
-        # 	# 	for post in serializer.data:
-	       #  # 		print(post)
-	       #  # 		for comment in post['comments']:
-	       #  # 			try:
-	       #  # 				lang = detect(comment['comment_message'])
-	       #  # 			except:
-	       #  # 				lang=''
+        def get(self, request, format=None):
+        	posts = Posts.objects.all()
+        	serializer = PostSerializer(posts, many=True)
+        	m={
+        		'data':serializer.data
+        	}
+
+
+        	 # if serializer.is_valid():
+        	# 	print(serializer.data)
+        	# 	for post in serializer.data:
+	        # 		print(post)
+	        # 		for comment in post['comments']:
+	        # 			try:
+	        # 				lang = detect(comment['comment_message'])
+	        # 			except:
+	        # 				lang=''
 	        				
 
-	       #  # 			if(lang == 'ur'):
-	       #  # 				print('message is in urdu')
-	       #  # 				comment['lang_type']='ur'
-	       #  # 			elif(lang== 'en'):
-	       #  # 				print('message is in english')
-	       #  # 				comment['lang_type']='en'
-	       #  # 			elif(lang==''):
-	       #  # 				comment['lang_type']=''
-	       #  # 			else:
-	       #  # 				print('message is in roman urdu')
-	       #  # 				comment['lang_type']='roman'
-        # 	# 	print(serializer.data)
-        # 	# 	serializer.save()
-        # 	return Response(serializer.data, status=status.HTTP_200_OK)
+	        # 			if(lang == 'ur'):
+	        # 				print('message is in urdu')
+	        # 				comment['lang_type']='ur'
+	        # 			elif(lang== 'en'):
+	        # 				print('message is in english')
+	        # 				comment['lang_type']='en'
+	        # 			elif(lang==''):
+	        # 				comment['lang_type']=''
+	        # 			else:
+	        # 				print('message is in roman urdu')
+	        # 				comment['lang_type']='roman'
+        	# 	print(serializer.data)
+        	# 	serializer.save()
+        	return Response(m, status=status.HTTP_200_OK)
 
         	# print(posts[2:5])
 

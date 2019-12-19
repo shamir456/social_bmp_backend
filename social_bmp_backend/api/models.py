@@ -41,11 +41,9 @@ class Posts(models.Model):
 	Sad = models.CharField(max_length=10,blank=True)
 	sentiment=models.CharField(max_length=10,blank=True)
 	Angry = models.CharField(max_length=10,blank=True) 
-	#objects = models.DjongoManager()
+	# objects = models.DjongoManager()
 	comments=models.ArrayModelField(
 		model_container=Comments,
 		model_form_class=CommentsForm
 		)
-	
-
-objects = models.DjongoManager()
+	objects = models.DjongoManager()

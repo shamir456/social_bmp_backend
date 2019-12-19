@@ -11,7 +11,7 @@ class PostsSerializer(serializers.DjongoModelSerializer):
 
     class Meta:
         model = Posts
-        fields = ['post_id','page_id','post_message','sentiment','post_type','post_published','All','num_shares','num_comments','Like','Wow','Love','Haha','Sad','Angry','comments']
+        fields = ['post_id','page_id','post_message','post_type','post_published','All','num_shares','num_comments','Like','Wow','Love','Haha','Sad','Angry','comments']
 
 
 
@@ -20,7 +20,7 @@ class PostSerializer(serializers.DjongoModelSerializer):
 
 	class Meta:
 		model=Posts
-		fields=['post_id','page_id','post_message','sentiment','post_type','post_published','All','num_shares','num_comments','Like','Wow','Love','Haha','Sad','Angry']
+		fields=['post_id','page_id','post_type','post_published','All','num_shares','num_comments','Like','Wow','Love','Haha','Sad','Angry']
 		
 	"""docstring for """
 	
