@@ -1,14 +1,14 @@
 from social_bmp_backend.api.models import Posts
 from rest_framework import viewsets
-from social_bmp_backend.api.serializers import PostsSerializer,PostSerializer
-
+from social_bmp_backend.api.serializers import PostsSerializer, PostSerializer
+from bson.son import SON
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework import generics
 from langdetect import detect
 from rest_meets_djongo import serializers
 from rest_framework import mixins
-from django.views.generic import DetailView,ListView,CreateView, UpdateView, DeleteView
+from django.views.generic import DetailView, ListView, CreateView, UpdateView, DeleteView
 
 
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication, TokenAuthentication
@@ -21,10 +21,20 @@ import pymongo
 
 from rest_framework.pagination import PageNumberPagination
 
+
+from textblob import TextBlob
+import json
+import time
+import re
+import fasttext
+import joblib
+
+
 class StandardResultsPagination(PageNumberPagination):
-	page_size=50
-	page_size_query_param='page_size'
-	max_page_size=1000
+    page_size = 50
+    page_size_query_param = 'page_size'
+    max_page_size = 1000
+
 
 class PostListView(generics.GenericAPIView,
                     mixins.ListModelMixin,
@@ -35,10 +45,9 @@ class PostListView(generics.GenericAPIView,
     serializer_class = PostsSerializer
     queryset = Posts.objects.all()
     lookup_field = 'id'
-    authentication_classes = [TokenAuthentication, SessionAuthentication, BasicAuthentication]
-    permission_classes = [IsAuthenticated, IsAdminUser]
-
-
+    # authentication_classes = [TokenAuthentication,
+    #     SessionAuthentication, BasicAuthentication]
+    # permission_classes = [IsAuthenticated, IsAdminUser]
 
     def get(self, request, id=None):
         if id:
@@ -57,97 +66,224 @@ class PostListView(generics.GenericAPIView,
 
     def perform_update(self, serializer):
         print(self.request.user)
-        serializer.save(created_by=self.request.user)        
+        serializer.save(created_by=self.request.user)
 
     def delete(self, request, id=None):
         return self.destroy(request, id)
 
-	
 
 class PostsCreateSet(generics.CreateAPIView):
     queryset = Posts.objects.all()
     serializer_class = PostsSerializer
     lookup_field = 'id'
-    authentication_classes = [TokenAuthentication, SessionAuthentication, BasicAuthentication]
+
+    def __init__(self):
+
+        self.PRETRAINED_MODEL_PATH = '/home/zen/lid.176.bin'
+        self.model = fasttext.load_model(self.PRETRAINED_MODEL_PATH)
+        self.roman_model=joblib.load('/home/zen/roman-urdu.pkl')
+        # authentication_classes = [TokenAuthentication,
+    #     SessionAuthentication, BasicAuthentication]
+
+    # def list(self, request):
+    #     queryset = self.get_queryset()
+    #     serializer = PostsSerializer(queryset, many=True)
+    #     return Response(serializer.data)
+    def process_text(self, input_review):
+    #     input_review = input_review.astype(str).str.lower() #converting to lower case
+    #     print(input_review)
+    #     input_review = input_review.astype(str).str.replace('[{}]'.format(string.punctuation), '') #remove punctuation
+    #     print(input_review)
+
+    #     input_review = input_review.astype(strromanroman).str.replace("[^a-zA-Z#]",' ') #remove special characters
+    #     print(input_review)
+
+        input_review = re.sub(
+            r'\w+:\/{2}[\d\w-]+(\.[\d\w-]+)*(?:(?:\/[^\s/]*))*', '', input_review)
+    #     print(input_review)
+        input_review = input_review.lower()
+       # print(input_review)
+        return input_review
+    def lemmatize_with_postag(self,sentence):
+        sent = TextBlob(sentence)
+        tag_dict = {"J": 'a', 
+                    "N": 'n', 
+                    "V": 'v', 
+                    "R": 'r'}
+        words_and_tags = [(w, tag_dict.get(pos[0], 'n')) for w, pos in sent.tags]    
+        lemmatized_list = [wd.lemmatize(tag) for wd, tag in words_and_tags]
+        return " ".join(lemmatized_list)
+
+    def convertAllFields(self,fields,data):
+        for j in range(0,len(data)):
+            for i in fields:
+    #             print(data[j][i])
+                data[j][i]=str(data[j][i])
+                if (('k' in  data[j][i]) | ('K' in data[j][i])):
+                    data[j][i]=data[j][i].replace('K','')
+                    data[j][i]=data[j][i].replace('k','')
+                    data[j][i]=str(int(float(data[j][i])*1000))
+        return data
+
+    def process_post_data_list(self,post_data):
+        # PRETRAINED_MODEL_PATH = '/home/zen/lid.176.bin'
+        # model = fasttext.load_model(PRETRAINED_MODEL_PATH)
+        fields=['num_shares','num_comments','All','Like','Wow','Love','Haha','Sad','Angry']
+        print("Data Loading...")
+        data=self.convertAllFields(fields,post_data)
+        print('Conversion....')
+        for posts in data:
+            i=0
+            
+
+            for comments in posts['comments']:
+                lang_type=''
+                comments['sentiment']=''
+                comments['comment_message']=self.process_text(str(comments['comment_message']))
+                if (("graphical emoji" == str(comments['comment_message'])) or ("Graphical Emoji"==str(comments['comment_message']))):
+                    # print(comments)
+
+                    print('here')
+        #             posts['comments'].remove(comments)
+                    comments['lang_type']=''
+                    comments['comment_message']=''
+        #             print(comments['comment_message'])
+                    del posts['comments'][i]
+                    i=i+1
+                    
+                else:
+                    comments['comment_message']=comments['comment_message'].replace('\n','')
+                    analysis=TextBlob('u'+comments['comment_message'])
+                    comment_message=comments['comment_message']
+                    i=i+1
+
+                    lang_type=self.model.predict(str(comment_message))            
+                    if lang_type[0][0] == '__label__en' and lang_type[1][0] > 0.7:
+                            comments['lang_type']='english_lang'
+                            print('english')
+                    elif lang_type[0][0] == '__label__ur' and lang_type[1][0] > 0.7:
+                        comments['lang_type']='urdu_lang'
+                        print('urdu')
+                    else:
+                        comments['lang_type']='roman'
+
+        for posts in data:
+            
+            for comments in posts['comments']:
+                print(comments['comment_message'],comments['lang_type'])
+
+                # comments['sentiment']=''
+                if comments['lang_type'] == 'roman':
+                    comments['sentiment']=str(self.roman_model.predict([comments['comment_message']])[0])
+                    
+            
+                if comments['lang_type'] == "english_lang":
+                    message=self.lemmatize_with_postag(comments['comment_message'])
+                    analysis=TextBlob(message)
+                    print(analysis.sentiment.polarity)
+
+                    i=i+1
+                    if analysis.sentiment.polarity < -0.1:
+                        comments['sentiment']='Negative'
+                    elif analysis.sentiment.polarity >= 0.5:
+                        comments['sentiment']='Positive'
+                    else:
+                        comments['sentiment']='Neutral'        
+
+        return data
 
 
-    def list(self, request):
-        queryset = self.get_queryset()
-        serializer = PostsSerializer(queryset, many=True)
-        return Response(serializer.data)
+
 
     def post(self, request, format=None):
         data = request.data
         if isinstance(data, list):  # <- is the main logic
-            serializer = self.get_serializer(data=request.data, many=True)
+            processed_data=self.process_post_data_list(data)
+            # complete_data=self.perform_sentiment()
+            serializer = self.get_serializer(data=processed_data, many=True)
 
         else:
-            serializer = self.get_serializer(data=request.data)
+            serializer = self.get_serializer(data=data)
 
 
         if serializer.is_valid():
-        	serializer.save()
+            serializer.save()
 
-        	return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self,request,id=None):
-    	data = request.data
-    	instance = Posts.objects.get(pk=id)
-    	serializer = PostsSerializer(instance, data=data)
-    	if serializer.is_valid():
-    		serializer.save()
-    		return Response(serializer.data, status=200)
-    	return Response(serializer.erros, status=400)
+        data = request.data
+        instance = Posts.objects.get(pk=id)
+        serializer = PostsSerializer(instance, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=200)
+        return Response(serializer.erros, status=400)
 
 class PostsViewSet(generics.ListAPIView):
         serializer_class= PostSerializer
         queryset = Posts.objects.all()
         authentication_classes = [TokenAuthentication, SessionAuthentication, BasicAuthentication]
-        print(queryset)
-        # pagination_class=StandardResultsPagination
+        # print(queryset)
+        pagination_class=StandardResultsPagination
         
 
         def get(self, request, format=None):
-        	posts = Posts.objects.all()
-        	serializer = PostSerializer(posts, many=True)
-        	m={
-        		'data':serializer.data
-        	}
+            posts = Posts.objects.all()
+            serializer = PostSerializer(posts, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+            # print(posts[2:5])
+
+pipline=[{"$unwind":"$comments"},
+{"$group":{ "_id":"$comments.comment_author","count":{"$sum":1},"posts": { "$push":  {"$concat":["$page_id", "/posts/", "$post_id"]}}}},
+{"$sort":{"count":-1}},
+{ "$limit" : 50 } 
+]
+class AuthorViewSet(generics.ListAPIView):
 
 
-        	 # if serializer.is_valid():
-        	# 	print(serializer.data)
-        	# 	for post in serializer.data:
-	        # 		print(post)
-	        # 		for comment in post['comments']:
-	        # 			try:
-	        # 				lang = detect(comment['comment_message'])
-	        # 			except:
-	        # 				lang=''
-	        				
+    def get(self,request):
+        author=Posts.objects.mongo_aggregate(pipline)
+        print(author)
+        return Response(author,status=status.HTTP_200_OK)
 
-	        # 			if(lang == 'ur'):
-	        # 				print('message is in urdu')
-	        # 				comment['lang_type']='ur'
-	        # 			elif(lang== 'en'):
-	        # 				print('message is in english')
-	        # 				comment['lang_type']='en'
-	        # 			elif(lang==''):
-	        # 				comment['lang_type']=''
-	        # 			else:
-	        # 				print('message is in roman urdu')
-	        # 				comment['lang_type']='roman'
-        	# 	print(serializer.data)
-        	# 	serializer.save()
-        	return Response(m, status=status.HTTP_200_OK)
 
-        	# print(posts[2:5])
+sentiment_pipeline=[ {"$unwind":"$comments"},  
+{ "$group":{ "_id":"$comments.sentiment", "count":{"$sum":1}  } } 
 
-        	
-        	
+]
+
+post_pipeline=[ { "$group": {     "_id": {"month": {"$month": "$post_published"},"year":{"$year":"$post_published"}},     "count": { "$sum": 1} }},{"$sort":{"_id.year":-1}} ]
+
+class SentimentViewSet(generics.ListAPIView):
+    queryset=Posts.objects.mongo_aggregate(pipline)
+
+    def get(self,request):
+        sentiment=Posts.objects.mongo_aggregate(sentiment_pipeline)
+        print(sentiment)
 
 
 
+        return Response(sentiment,status=status.HTTP_200_OK)
+
+language_pipeline=[ {"$unwind":"$comments"},  
+{ "$group":{ "_id":"$comments.lang_type", "count":{"$sum":1}  } } 
+
+]
+
+
+class LanguageViewSet(generics.ListAPIView):
+    def get(self,request):
+        language=Posts.objects.mongo_aggregate(language_pipeline)
+        return Response(language,status=status.HTTP_200_OK)
+
+class DataViewSet(generics.ListAPIView):
+
+    def get(self,request):
+        user_profiles=Posts.objects.mongo_aggregate(post_pipeline)
+
+        return Response(user_profiles,status=status.HTTP_200_OK)
