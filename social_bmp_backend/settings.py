@@ -25,7 +25,7 @@ SECRET_KEY = 'f^cag+e$9xp1(h-y$^thcje8!!t1z^*erw(&wn+gx#ijn+o9%t'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # REST_FRAMEWORK = {
 #     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.CursorPagination',
@@ -34,6 +34,21 @@ ALLOWED_HOSTS = []
 
 
 # Application definition
+# CORS_ORIGIN_ALLOW_ALL=True
+# CORS_ALLOW_CREDENTIALS = True
+
+# CORS_ALLOW_HEADERS = [
+#     'accept',
+#     'accept-encoding',
+#     'authorization',
+#     'content-type',
+#     'dnt',
+#     'origin',
+#     'user-agent',
+#     'x-csrftoken',
+#     'x-requested-with',
+# ]
+CORS_ORIGIN_ALLOW_ALL=True
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -53,6 +68,7 @@ INSTALLED_APPS = [
 SITE_ID = 1
 
 MIDDLEWARE = [
+'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -60,9 +76,14 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.common.CommonMiddleware',
+    # 'corsheaders.middleware.CorsMiddleware',
+
 ]
+
+CORS_ORIGIN_WHITELIST = [
+    'http://localhost:4200',
+]
+
 
 ROOT_URLCONF = 'social_bmp_backend.urls'
 
@@ -94,11 +115,7 @@ DATABASES = {
          'NAME': 'social',
      }
  }
-CORS_ORIGIN_ALLOW_ALL=True
-# CORS_ORIGIN_WHITELIST = [
-#     "http://localhost:4200",
-#     "http://127.0.0.1:4200"
-# ]
+
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
 

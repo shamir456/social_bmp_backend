@@ -13,7 +13,7 @@ urlpatterns = [
     path('comments/authors/',views.AuthorViewSet.as_view(),name='author-list'),
     path('comments/sentiment/',views.SentimentViewSet.as_view(),name='sentiment-list'),
     path('posts/count/',views.DataViewSet.as_view(),name='post-count'),
-    path('comments/lang',views.LanguageViewSet.as_view(),name='lang-count')
+    path('comments/lang/',views.LanguageViewSet.as_view(),name='lang-count')
 
 ]
 

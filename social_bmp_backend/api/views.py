@@ -45,9 +45,8 @@ class PostListView(generics.GenericAPIView,
     serializer_class = PostsSerializer
     queryset = Posts.objects.all()
     lookup_field = 'id'
-    # authentication_classes = [TokenAuthentication,
-    #     SessionAuthentication, BasicAuthentication]
-    # permission_classes = [IsAuthenticated, IsAdminUser]
+    authentication_classes = [TokenAuthentication,SessionAuthentication, BasicAuthentication]
+    permission_classes = [IsAuthenticated, IsAdminUser]
 
     def get(self, request, id=None):
         if id:
@@ -76,14 +75,15 @@ class PostsCreateSet(generics.CreateAPIView):
     queryset = Posts.objects.all()
     serializer_class = PostsSerializer
     lookup_field = 'id'
+    authentication_classes = [TokenAuthentication,SessionAuthentication, BasicAuthentication]
+    permission_classes = [IsAuthenticated, IsAdminUser]
 
     def __init__(self):
 
         self.PRETRAINED_MODEL_PATH = '/home/zen/lid.176.bin'
         self.model = fasttext.load_model(self.PRETRAINED_MODEL_PATH)
         self.roman_model=joblib.load('/home/zen/roman-urdu.pkl')
-        # authentication_classes = [TokenAuthentication,
-    #     SessionAuthentication, BasicAuthentication]
+        
 
     # def list(self, request):
     #     queryset = self.get_queryset()
@@ -226,7 +226,8 @@ class PostsCreateSet(generics.CreateAPIView):
 class PostsViewSet(generics.ListAPIView):
         serializer_class= PostSerializer
         queryset = Posts.objects.all()
-        authentication_classes = [TokenAuthentication, SessionAuthentication, BasicAuthentication]
+        authentication_classes = [TokenAuthentication,SessionAuthentication, BasicAuthentication]
+        permission_classes = [IsAuthenticated]
         # print(queryset)
         pagination_class=StandardResultsPagination
         
@@ -257,7 +258,7 @@ sentiment_pipeline=[ {"$unwind":"$comments"},
 
 ]
 
-post_pipeline=[ { "$group": {     "_id": {"month": {"$month": "$post_published"},"year":{"$year":"$post_published"}},     "count": { "$sum": 1} }},{"$sort":{"_id.year":-1}} ]
+post_pipeline=[ { "$group": {     "_id": {"year":{"$year":"$post_published"},"month":{"$month":"$post_published"}},     "count": { "$sum": 1} ,"time_year":{"$first":"$post_published"}}},{ "$sort": { "_id": -1 } } ]
 
 class SentimentViewSet(generics.ListAPIView):
     queryset=Posts.objects.mongo_aggregate(pipline)
