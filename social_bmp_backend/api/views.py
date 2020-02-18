@@ -139,6 +139,8 @@ class PostsCreateSet(generics.CreateAPIView):
             for comments in posts['comments']:
                 lang_type=''
                 comments['sentiment']=''
+                comments['lang_type']=''
+
                 comments['comment_message']=self.process_text(str(comments['comment_message']))
                 if (("graphical emoji" == str(comments['comment_message'])) or ("Graphical Emoji"==str(comments['comment_message']))):
                     # print(comments)
@@ -170,7 +172,7 @@ class PostsCreateSet(generics.CreateAPIView):
         for posts in data:
             
             for comments in posts['comments']:
-                print(comments['comment_message'],comments['lang_type'])
+                # print(comments['comment_message'],comments['lang_type'])
 
                 # comments['sentiment']=''
                 if comments['lang_type'] == 'roman':
@@ -180,7 +182,7 @@ class PostsCreateSet(generics.CreateAPIView):
                 if comments['lang_type'] == "english_lang":
                     message=self.lemmatize_with_postag(comments['comment_message'])
                     analysis=TextBlob(message)
-                    print(analysis.sentiment.polarity)
+                    # print(analysis.sentiment.polarity)
 
                     i=i+1
                     if analysis.sentiment.polarity < -0.1:
@@ -226,8 +228,8 @@ class PostsCreateSet(generics.CreateAPIView):
 class PostsViewSet(generics.ListAPIView):
         serializer_class= PostSerializer
         queryset = Posts.objects.all()
-        authentication_classes = [TokenAuthentication,SessionAuthentication, BasicAuthentication]
-        permission_classes = [IsAuthenticated]
+        # authentication_classes = [TokenAuthentication,SessionAuthentication, BasicAuthentication]
+        # permission_classes = [IsAuthenticated]
         # print(queryset)
         pagination_class=StandardResultsPagination
         
@@ -239,10 +241,35 @@ class PostsViewSet(generics.ListAPIView):
 
             # print(posts[2:5])
 
-pipline=[{"$unwind":"$comments"},
-{"$group":{ "_id":"$comments.comment_author","count":{"$sum":1},"posts": { "$push":  {"$concat":["$page_id", "/posts/", "$post_id"]}}}},
-{"$sort":{"count":-1}},
-{ "$limit" : 50 } 
+pipline=[
+  {
+    "$unwind": "$comments"
+  },
+  {
+    "$group": {
+      "_id": "$comments.comment_author",
+      "count": {
+        "$sum": 1
+      },
+      "posts": {
+        "$push": {
+          "$concat": [
+            "$page_id",
+            "/posts/",
+            "$post_id"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "$sort": {
+      "count": -1
+    }
+  },
+  {
+    "$limit": 50
+  }
 ]
 class AuthorViewSet(generics.ListAPIView):
 
@@ -288,3 +315,44 @@ class DataViewSet(generics.ListAPIView):
         user_profiles=Posts.objects.mongo_aggregate(post_pipeline)
 
         return Response(user_profiles,status=status.HTTP_200_OK)
+
+
+language_sentiment_pipeline=[
+  {
+    "$unwind": "$comments"
+  },
+  {
+    "$group": {
+      "_id": {
+        "year": {
+          "$year": {
+            "$toDate": "$post_published"
+          }
+        },
+        "month": {
+          "$month": {
+            "$toDate": "$post_published"
+          }
+        },
+        "post_sentiment": "$comments.sentiment",
+        "comment_lang": "$comments.lang_type"
+      },
+      "count": {
+        "$sum": 1
+      }
+    }
+  },
+  {
+    "$sort": {
+      "_id": -1
+    }
+  }
+]
+
+
+class Language_SentimentViewSet(generics.ListAPIView):
+    def get(self,request):
+        language_sentiment=Posts.objects.mongo_aggregate(language_sentiment_pipeline)
+        return Response(language_sentiment,status=status.HTTP_200_OK)
+
+
