@@ -14,7 +14,15 @@ urlpatterns = [
     path('comments/sentiment/',views.SentimentViewSet.as_view(),name='sentiment-list'),
     path('posts/count/',views.DataViewSet.as_view(),name='post-count'),
     path('comments/lang/',views.LanguageViewSet.as_view(),name='lang-count'),
-    path('comments/lang_sentiment/',views.Language_SentimentViewSet.as_view(),name='')
+    path('comments/lang_sentiment/',views.Language_SentimentViewSet.as_view(),name=''),
+    path('comments/language-time/',views.Language_TimeViewSet.as_view(),name=''), #comments languages w.r.t to time are sent using this endpoint
+    path('comments/sentiment-time/',views.Sentiment_TimeViewSet.as_view(),name=''), #comments sentiment w.r.t time are sent using this endpoint
+    path('posts/reacts',views.Post_ReactViewSet.as_view(),name='post-reacts'), #post reacts are sent using this endpoint
+    path('posts/types',views.Post_TypeViewSet.as_view(),name='post-types') #post types are sent using this endpoint
+
+
+
+
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

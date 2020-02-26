@@ -356,3 +356,192 @@ class Language_SentimentViewSet(generics.ListAPIView):
         return Response(language_sentiment,status=status.HTTP_200_OK)
 
 
+language_time_pipeline=[
+  {
+    "$unwind": "$comments"
+  },
+  {
+    "$group": {
+      "_id": {
+        "year": {
+          "$year": {
+            "$toDate": "$post_published"
+          }
+        },
+        "month": {
+          "$month": {
+            "$toDate": "$post_published"
+          }
+        },
+        "comment_lang": "$comments.lang_type"
+      },
+      "count": {
+        "$sum": 1
+      }
+    }
+  },
+  {
+    "$sort": {
+      "_id": -1
+    }
+  }
+]
+
+class Language_TimeViewSet(generics.ListAPIView):
+    def get(self,request):
+        language_time=Posts.objects.mongo_aggregate(language_time_pipeline)
+        return Response(language_time,status=status.HTTP_200_OK)
+
+
+sentiment_time_pipeline=[
+  {
+    "$unwind": "$comments"
+  },
+  {
+    "$group": {
+      "_id": {
+        "year": {
+          "$year": {
+            "$toDate": "$post_published"
+          }
+        },
+        "month": {
+          "$month": {
+            "$toDate": "$post_published"
+          }
+        },
+        "post_sentiment": "$comments.sentiment",
+      },
+      "count": {
+        "$sum": 1
+      }
+    }
+  },
+  {
+    "$sort": {
+      "_id": -1
+    }
+  }
+]
+
+class Sentiment_TimeViewSet(generics.ListAPIView):
+    def get(self,request):
+        sentiment_time=Posts.objects.mongo_aggregate(sentiment_time_pipeline)
+        return Response(sentiment_time,status=status.HTTP_200_OK)
+
+post_reacts_pipeline=[
+  {
+    "$group": {
+      "_id": {
+        
+        "year": {
+          "$year": { "$toDate": "$post_published" }
+        },
+        "month": {
+          "$month": { "$toDate": "$post_published" }
+        }
+      },
+      "angry": {
+        "$sum": {
+          "$toInt": "$Angry"
+        }
+      },"haha": {
+        "$sum": {
+          "$toInt": "$Haha"
+        }
+      },"wow": {
+        "$sum": {
+          "$toInt": "$Wow"
+        }
+      },"sad": {
+        "$sum": {
+          "$toInt": "$Sad"
+        }
+      },"all": {
+        "$sum": {
+          "$toInt": "$All"
+        }
+      },"like": {
+        "$sum": {
+          "$toInt": "$Like"
+        }
+      },
+      "post_count": {
+        "$sum": 1
+      }
+    }
+    
+  },
+  { "$sort": { "_id": -1 } }
+]
+
+
+class Post_ReactViewSet(generics.ListAPIView):
+    def get(self,request):
+        post_reacts=Posts.objects.mongo_aggregate(post_reacts_pipeline)
+        return Response(post_reacts,status=status.HTTP_200_OK)
+
+post_type_pipeline=[
+{
+    "$group": {
+      "_id": {
+        "year": {
+          "$year": {
+            "$toDate": "$post_published"
+          }
+        },
+        "month": {
+          "$month": {
+            "$toDate": "$post_published"
+          }
+        },
+        "post_type":"$post_type"
+      },
+      # "angry": {
+      #   $sum: {
+      #     $toInt: "$Angry"
+      #   }
+      # },
+      # "haha": {
+      #   $sum: {
+      #     $toInt: "$Haha"
+      #   }
+      # },
+      # "wow": {
+      #   $sum: {
+      #     $toInt: "$Wow"
+      #   }
+      # },
+      # "sad": {
+      #   $sum: {
+      #     $toInt: "$Sad"
+      #   }
+      # },
+      # "all": {
+      #   $sum: {
+      #     $toInt: "$All"
+      #   }
+      # },
+      # "like": {
+      #   $sum: {
+      #     $toInt: "$Like"
+      #   }
+      # },
+      "count": {
+        "$sum": 1
+      }
+    }
+  },
+  {
+    "$sort": {
+      "_id": -1
+    }
+  }
+]
+
+
+
+class Post_TypeViewSet(generics.ListAPIView):
+    def get(self,request):
+        post_types=Posts.objects.mongo_aggregate(post_type_pipeline)
+        return Response(post_types,status=status.HTTP_200_OK)
