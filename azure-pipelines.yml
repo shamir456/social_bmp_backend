@@ -11,8 +11,6 @@ pool:
   vmImage: 'ubuntu-latest'
 strategy:
   matrix:
-    Python35:
-      PYTHON_VERSION: '3.5'
     Python36:
       PYTHON_VERSION: '3.6'
     Python37:
@@ -66,7 +64,7 @@ steps:
 
 - script: |
     pushd '$(projectRoot)'
-    python manage.py runserver
+    python manage.py runserver 0:8000
   displayName: 'deployed'
 # - script: |
 #     pushd '$(projectRoot)'
