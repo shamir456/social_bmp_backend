@@ -45,8 +45,8 @@ class PostListView(generics.GenericAPIView,
     serializer_class = PostsSerializer
     queryset = Posts.objects.all()
     lookup_field = 'id'
-    authentication_classes = [TokenAuthentication,SessionAuthentication, BasicAuthentication]
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    # authentication_classes = [TokenAuthentication,SessionAuthentication, BasicAuthentication]
+    # permission_classes = [IsAuthenticated, IsAdminUser]
 
     def get(self, request, id=None):
         if id:
@@ -75,8 +75,8 @@ class PostsCreateSet(generics.CreateAPIView):
     queryset = Posts.objects.all()
     serializer_class = PostsSerializer
     lookup_field = 'id'
-    authentication_classes = [TokenAuthentication,SessionAuthentication, BasicAuthentication]
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    # authentication_classes = [TokenAuthentication,SessionAuthentication, BasicAuthentication]
+    # permission_classes = [IsAuthenticated, IsAdminUser]
 
     def __init__(self):
 
@@ -202,7 +202,7 @@ class PostsCreateSet(generics.CreateAPIView):
         if isinstance(data, list):  # <- is the main logic
             processed_data=self.process_post_data_list(data)
             # complete_data=self.perform_sentiment()
-            serializer = self.get_serializer(data=processed_data, many=True)
+            serializer = self.get_serializer(data=data, many=True)
 
         else:
             serializer = self.get_serializer(data=data)
@@ -285,7 +285,8 @@ sentiment_pipeline=[ {"$unwind":"$comments"},
 
 ]
 
-post_pipeline=[ { "$group": {     "_id": {"year":{"$year":"$post_published"},"month":{"$month":"$post_published"}},     "count": { "$sum": 1} ,"time_year":{"$first":"$post_published"}}},{ "$sort": { "_id": -1 } } ]
+post_pipeline=[ { "$group": {     "_id": {"year":{"$year":"$post_published"},"month":{"$month":"$post_published"}
+},     "count": { "$sum": 1} ,"time_year":{"$first":"$post_published"}}},{ "$sort": { "_id": -1 } } ]
 
 class SentimentViewSet(generics.ListAPIView):
     queryset=Posts.objects.mongo_aggregate(pipline)
@@ -372,7 +373,11 @@ language_time_pipeline=[
           "$month": {
             "$toDate": "$post_published"
           }
-        },
+        }
+        # ,
+        # "week": { "$week": { "$toDate": "$post_published" } }
+
+        ,
         "comment_lang": "$comments.lang_type"
       },
       "count": {
@@ -409,7 +414,11 @@ sentiment_time_pipeline=[
           "$month": {
             "$toDate": "$post_published"
           }
-        },
+        }
+        # ,
+        # "week": { "$week": { "$toDate": "$post_published" } }
+
+        ,
         "post_sentiment": "$comments.sentiment",
       },
       "count": {
@@ -495,38 +504,9 @@ post_type_pipeline=[
             "$toDate": "$post_published"
           }
         },
+
         "post_type":"$post_type"
       },
-      # "angry": {
-      #   $sum: {
-      #     $toInt: "$Angry"
-      #   }
-      # },
-      # "haha": {
-      #   $sum: {
-      #     $toInt: "$Haha"
-      #   }
-      # },
-      # "wow": {
-      #   $sum: {
-      #     $toInt: "$Wow"
-      #   }
-      # },
-      # "sad": {
-      #   $sum: {
-      #     $toInt: "$Sad"
-      #   }
-      # },
-      # "all": {
-      #   $sum: {
-      #     $toInt: "$All"
-      #   }
-      # },
-      # "like": {
-      #   $sum: {
-      #     $toInt: "$Like"
-      #   }
-      # },
       "count": {
         "$sum": 1
       }
@@ -545,3 +525,101 @@ class Post_TypeViewSet(generics.ListAPIView):
     def get(self,request):
         post_types=Posts.objects.mongo_aggregate(post_type_pipeline)
         return Response(post_types,status=status.HTTP_200_OK)
+
+
+
+
+
+
+
+
+user_profiling= [
+    {
+        "$unwind": "$comments"
+    },
+    { "$match" : { "comments.comment_author" : "" } },
+    {
+        "$group": {
+            "_id": "$comments.comment_author",
+            "count": {
+                "$sum": 1
+            },
+            "comments": {
+                "$push": {
+                    "comment_sentiment": "$comments.sentiment","comment_id": "$comments.comment_id","comment_message": "$comments.comment_message","comment_author":"$comments.comment_author","post_message":"$post_message", "post_time": "$post_published", "post_id": {
+                        "$concat": [
+                            "facebook.com/", "$page_id",
+                            "/posts/",
+                            "$post_id"
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    {
+        "$sort": {
+            "count": -1
+        }
+    }
+    ,
+    {
+        "$limit": 50
+    }
+]
+
+
+class UserProfileViewSet(generics.ListAPIView):
+    queryset=Posts.objects.mongo_aggregate(user_profiling)
+    pagination_class=StandardResultsPagination
+
+    def get(self,request,*args,**kwargs):
+        query=request.GET.get("q")
+        print(query)
+        user_profiling[1]['$match']['comments.comment_author']=query
+        print(user_profiling[1]['$match']['comments.comment_author'])
+        user_profiles=Posts.objects.mongo_aggregate(user_profiling)
+        return Response(user_profiles,status=status.HTTP_200_OK)
+
+
+top_comments=[
+    {
+        "$unwind": "$comments"
+    },
+    {
+        "$group": {
+            "_id": "$post_published",
+            "count": {
+                "$sum": 1
+            },
+            "comments": {
+                "$push": {
+                    "comment_sentiment": "$comments.sentiment", "post_time": "$post_published", "post_id": {
+                        "$concat": [
+                            "facebook.com/", "$page_id",
+                            "/posts/",
+                            "$post_id",
+                            '/?comment_id=',
+                            '$comments.comment_id'
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    {
+        "$sort": {
+            "_id": -1
+        }
+    },
+    {
+        "$limit": 10
+    }
+]
+
+
+class TopComment(generics.ListAPIView):
+
+    def get(self,request):
+        top_comment=Posts.objects.mongo_aggregate(top_comments)
+        return Response(top_comment,status=status.HTTP_200_OK)

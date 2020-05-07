@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'f^cag+e$9xp1(h-y$^thcje8!!t1z^*erw(&wn+gx#ijn+o9%t'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -112,7 +112,10 @@ WSGI_APPLICATION = 'social_bmp_backend.wsgi.application'
 DATABASES = {
      'default': {
          'ENGINE': 'djongo',
-         'NAME': 'fyp',
+         'NAME': 'k_electric_db',
+         # 'HOST':'mongodb+srv://<username>:<password>@cluster0-vucp7.mongodb.net/test?retryWrites=true&w=majority',
+         # 'USER': 'social_user',
+         # 'PASSWORD': 'Hello123\\\\\\',
      }
  }
 
