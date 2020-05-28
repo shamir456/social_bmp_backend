@@ -30,7 +30,7 @@ from rest_framework.authtoken.views import obtain_auth_token
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
   #  path('', ),
-    # path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('admin/', admin.site.urls),
     path('api/',include('social_bmp_backend.api.urls')),
     path('auth/',obtain_auth_token),

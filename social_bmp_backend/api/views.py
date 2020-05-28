@@ -45,8 +45,9 @@ class PostListView(generics.GenericAPIView,
     serializer_class = PostsSerializer
     queryset = Posts.objects.all()
     lookup_field = 'id'
-    # authentication_classes = [TokenAuthentication,SessionAuthentication, BasicAuthentication]
-    # permission_classes = [IsAuthenticated, IsAdminUser]
+    authentication_classes = [TokenAuthentication,]
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    # pagination=StandardResultsPagination
 
     def get(self, request, id=None):
         if id:
@@ -75,8 +76,8 @@ class PostsCreateSet(generics.CreateAPIView):
     queryset = Posts.objects.all()
     serializer_class = PostsSerializer
     lookup_field = 'id'
-    # authentication_classes = [TokenAuthentication,SessionAuthentication, BasicAuthentication]
-    # permission_classes = [IsAuthenticated, IsAdminUser]
+    authentication_classes = [TokenAuthentication,]
+    permission_classes = [IsAuthenticated, IsAdminUser]
 
     def __init__(self):
 
@@ -228,16 +229,16 @@ class PostsCreateSet(generics.CreateAPIView):
 class PostsViewSet(generics.ListAPIView):
         serializer_class= PostSerializer
         queryset = Posts.objects.all()
-        # authentication_classes = [TokenAuthentication,SessionAuthentication, BasicAuthentication]
-        # permission_classes = [IsAuthenticated]
+        authentication_classes = [TokenAuthentication,]
+        permission_classes = [IsAuthenticated]
         # print(queryset)
-        pagination_class=StandardResultsPagination
+        # pagination_class=StandardResultsPagination
         
 
-        def get(self, request, format=None):
-            posts = Posts.objects.all()
-            serializer = PostSerializer(posts, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+        # def get(self, request, format=None):
+        #     posts = Posts.objects.all()
+        #     serializer = PostSerializer(posts, many=True)
+        #     return Response(serializer.data, status=status.HTTP_200_OK)
 
             # print(posts[2:5])
 
@@ -594,13 +595,14 @@ top_comments=[
             },
             "comments": {
                 "$push": {
-                    "comment_sentiment": "$comments.sentiment", "post_time": "$post_published", "post_id": {
+                    "comment_sentiment": "$comments.sentiment","comment_author": "$comments.comment_author","comment_message": "$comments.comment_message", "post_time": "$post_published", "post_id": {
                         "$concat": [
-                            "facebook.com/", "$page_id",
+                            "https://facebook.com/", "$page_id",
                             "/posts/",
                             "$post_id",
                             '/?comment_id=',
-                            '$comments.comment_id'
+                            '$comments.comment_id',
+
                         ]
                     }
                 }

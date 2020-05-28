@@ -1,7 +1,11 @@
 from djongo import models
 from django import forms
 
+
 # Create your models here.
+
+# class User(AbstractUser):
+# 	page_id=models.CharField(max_length=20) 
 
 class Comments(models.Model):
 	comment_id=models.CharField(max_length=20)
@@ -22,6 +26,8 @@ class CommentsForm(forms.ModelForm):
         fields = (
             'comment_id', 'comment_message','comment_time','lang_type','comment_author','scraped_time','sentiment'
         )
+
+
 
 
 
