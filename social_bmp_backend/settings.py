@@ -115,9 +115,9 @@ DATABASES = {
      'default': {
          'ENGINE': 'djongo',
          'NAME': 'k_electric_db',
-         # 'HOST':'mongodb+srv://<username>:<password>@cluster0-vucp7.mongodb.net/test?retryWrites=true&w=majority',
-         # 'USER': 'social_user',
-         # 'PASSWORD': 'Hello123\\\\\\',
+         'HOST':'mongodb+srv://<username>:<password>@cluster0-vucp7.mongodb.net/test?retryWrites=true&w=majority',
+         'USER': 'social_user',
+         'PASSWORD': 'Hello123\\\\\\',
      }
  }
 
