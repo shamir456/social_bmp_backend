@@ -21,6 +21,7 @@ import pymongo
 
 from rest_framework.pagination import PageNumberPagination
 
+from polyglot.text import Text, Word
 
 from textblob import TextBlob
 import json
@@ -144,13 +145,9 @@ class PostsCreateSet(generics.CreateAPIView):
 
                 comments['comment_message']=self.process_text(str(comments['comment_message']))
                 if (("graphical emoji" == str(comments['comment_message'])) or ("Graphical Emoji"==str(comments['comment_message']))):
-                    # print(comments)
 
-                    print('here')
-        #             posts['comments'].remove(comments)
                     comments['lang_type']=''
                     comments['comment_message']=''
-        #             print(comments['comment_message'])
                     del posts['comments'][i]
                     i=i+1
                     
@@ -173,9 +170,16 @@ class PostsCreateSet(generics.CreateAPIView):
         for posts in data:
             
             for comments in posts['comments']:
-                # print(comments['comment_message'],comments['lang_type'])
+                if comments['lang_type'] == "urdu_lang":
+                    text = Text(str(comments['comment_message']))
+                    sentiment_score=sum([w.polarity for  w in text.words])
+                    if sentiment_score > 0:
+                        comments['sentiment']='Positive'
+                    elif sentiment_score < 0:
+                        comments['sentiment']='Negative'
+                    elif sentiment_score == 0 :
+                        comments['sentiment']='Neutral'
 
-                # comments['sentiment']=''
                 if comments['lang_type'] == 'roman':
                     comments['sentiment']=str(self.roman_model.predict([comments['comment_message']])[0])
                     
@@ -191,7 +195,8 @@ class PostsCreateSet(generics.CreateAPIView):
                     elif analysis.sentiment.polarity >= 0.5:
                         comments['sentiment']='Positive'
                     else:
-                        comments['sentiment']='Neutral'        
+                        comments['sentiment']='Neutral'
+
 
         return data
 
@@ -200,18 +205,25 @@ class PostsCreateSet(generics.CreateAPIView):
 
     def post(self, request, format=None):
         data = request.data
+        # for post_data in data:
+        #     serializer = self.get_serializer(data=post_data)
+        #     if serializer.is_valid():
+        #         serializer.save()
+        print(data)
+
+
         if isinstance(data, list):  # <- is the main logic
             processed_data=self.process_post_data_list(data)
-            # complete_data=self.perform_sentiment()
-            serializer = self.get_serializer(data=data, many=True)
+            complete_data=self.perform_sentiment()
+            serializer = self.get_serializer(data=complete_data, many=True)
 
         else:
             serializer = self.get_serializer(data=data)
 
 
+
         if serializer.is_valid():
             serializer.save()
-
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         
@@ -229,8 +241,8 @@ class PostsCreateSet(generics.CreateAPIView):
 class PostsViewSet(generics.ListAPIView):
         serializer_class= PostSerializer
         queryset = Posts.objects.all()
-        authentication_classes = [TokenAuthentication,]
-        permission_classes = [IsAuthenticated]
+        # authentication_classes = [TokenAuthentication,]
+        # permission_classes = [IsAuthenticated]
         # print(queryset)
         # pagination_class=StandardResultsPagination
         
@@ -441,48 +453,53 @@ class Sentiment_TimeViewSet(generics.ListAPIView):
 
 post_reacts_pipeline=[
   {
-    "$group": {
-      "_id": {
-        
-        "year": {
-          "$year": { "$toDate": "$post_published" }
-        },
-        "month": {
-          "$month": { "$toDate": "$post_published" }
+        "$group": {
+            "_id": {
+
+                "year": {
+                    "$year": { "$toDate": "$post_published" }
+                },
+                "month": {
+                    "$month": { "$toDate": "$post_published" }
+                }
+            },
+            "angry": {
+                "$sum": {
+                    "$toInt": "$Angry"
+                }
+            }, "haha": {
+                "$sum": {
+                    "$toInt": "$Haha"
+                }
+            }, "wow": {
+                "$sum": {
+                    "$toInt": "$Wow"
+                }
+            }, "sad": {
+                "$sum": {
+                    "$toInt": "$Sad"
+                }
+            }, "all": {
+                "$sum": {
+                    "$toInt": "$All"
+                }
+            }, "like": {
+                "$sum": {
+                    "$toInt": "$Like"
+                }
+            },"love": {
+                "$sum": {
+                    "$toInt": "$Love"
+                }
+            },
+            "post_count": {
+                "$sum": 1
+            }
         }
-      },
-      "angry": {
-        "$sum": {
-          "$toInt": "$Angry"
-        }
-      },"haha": {
-        "$sum": {
-          "$toInt": "$Haha"
-        }
-      },"wow": {
-        "$sum": {
-          "$toInt": "$Wow"
-        }
-      },"sad": {
-        "$sum": {
-          "$toInt": "$Sad"
-        }
-      },"all": {
-        "$sum": {
-          "$toInt": "$All"
-        }
-      },"like": {
-        "$sum": {
-          "$toInt": "$Like"
-        }
-      },
-      "post_count": {
-        "$sum": 1
-      }
-    }
-    
-  },
-  { "$sort": { "_id": -1 } }
+
+    },
+    { "$sort": { "_id": -1 } }
+
 ]
 
 
