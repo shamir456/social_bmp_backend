@@ -36,8 +36,8 @@ ALLOWED_HOSTS = ['*']
 # AUTH_USER_MODEL='social_bmp_backend.api.User'
 
 # Application definition
-# CORS_ORIGIN_ALLOW_ALL=True
-# CORS_ALLOW_CREDENTIALS = True
+CORS_ORIGIN_ALLOW_ALL=True
+CORS_ALLOW_CREDENTIALS = True
 
 # CORS_ALLOW_HEADERS = [
 #     'accept',
@@ -50,7 +50,7 @@ ALLOWED_HOSTS = ['*']
 #     'x-csrftoken',
 #     'x-requested-with',
 # ]
-CORS_ORIGIN_ALLOW_ALL=True
+# CORS_ORIGIN_ALLOW_ALL=True
 
 INSTALLED_APPS = [
     'django.contrib.admin',
