@@ -9,7 +9,7 @@ djongo==1.2.36
 dnspython==1.16.0
 fasttext==0.9.1
 importlib-metadata==0.23
-joblib==0.14.1
+joblib==1.2.0
 langdetect==1.0.7
 more-itertools==7.2.0
 nltk==3.4.5
